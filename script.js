@@ -148,3 +148,20 @@ btnTransfer.addEventListener('click', function (e) {
     updateUI(currentAccount);
   }
 });
+
+btnClose.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  if (
+    currentAccount.userName === inputCloseUsername.value &&
+    currentAccount.pin === Number(inputClosePin.value)
+  ) {
+    const index = accounts.findIndex(
+      acc => acc.userName === currentAccount.userName
+    );
+    accounts.splice(index, 1);
+    containerApp.style.opacity = 0;
+    labelWelcome.textContent = 'Log in to get started';
+  }
+  inputCloseUsername.value = inputClosePin.value = '';
+});
