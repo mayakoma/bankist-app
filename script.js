@@ -17,7 +17,7 @@ const account1 = {
     '2020-05-08T14:11:59.604Z',
     '2020-05-27T17:01:17.194Z',
     '2020-07-11T23:36:17.929Z',
-    '2020-07-12T10:51:36.790Z',
+    '2022-09-17T10:51:36.790Z',
   ],
   currency: 'EUR',
   locale: 'pt-PT', // de-DE
@@ -76,6 +76,16 @@ const formatMovementDate = function (date) {
     Math.round(Math.abs(date2 - date1) / (1000 * 60 * 60 * 24));
   const daysPassed = calcDaysPassed(new Date(), date);
   console.log(daysPassed);
+
+  if (daysPassed === 0) {
+    return 'Today';
+  }
+  if (daysPassed === 1) {
+    return 'Yesterday';
+  }
+  if (daysPassed <= 7) {
+    return `${daysPassed} days`;
+  }
 
   const day = `${date.getDate()}`.padStart(2, 0);
   const month = `${date.getMonth() + 1}`.padStart(2, 0);
