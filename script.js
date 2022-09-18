@@ -71,11 +71,10 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
-const formatMovementDate = function (date) {
+const formatMovementDate = function (date, locale) {
   const calcDaysPassed = (date1, date2) =>
     Math.round(Math.abs(date2 - date1) / (1000 * 60 * 60 * 24));
   const daysPassed = calcDaysPassed(new Date(), date);
-  console.log(daysPassed);
 
   if (daysPassed === 0) {
     return 'Today';
@@ -87,9 +86,14 @@ const formatMovementDate = function (date) {
     return `${daysPassed} days`;
   }
 
-  const day = `${date.getDate()}`.padStart(2, 0);
-  const month = `${date.getMonth() + 1}`.padStart(2, 0);
-  return `${day}/${month}/${date.getFullYear()}`;
+  return new Intl.DateTimeFormat(locale).format(date);
+};
+
+const formatCur = function (value, locale, currency) {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: currency,
+  }).format(value);
 };
 
 const displayMovements = function (acc, sort = false) {
@@ -102,11 +106,14 @@ const displayMovements = function (acc, sort = false) {
   movs.forEach(function (mov, i) {
     const type = mov > 0 ? 'deposit' : 'withdrawal';
     const date = new Date(acc.movementsDates[i]);
-    const displayDate = formatMovementDate(date);
+    const displayDate = formatMovementDate(date, acc.locale);
+
+    const formattedMov = formatCur(mov, acc.locale, acc.currency);
+
     const html = `<div class="movements__row">
     <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
     <div class="movements__date">${displayDate}</div>
-    <div class="movements__value">${mov.toFixed(2)}€</div>
+    <div class="movements__value">${formattedMov}</div>
   </div>`;
 
     containerMovements.insertAdjacentHTML('afterbegin', html);
@@ -115,7 +122,11 @@ const displayMovements = function (acc, sort = false) {
 
 const calcDisplayBalance = function (account) {
   account.balance = account.movements.reduce((acc, mov) => acc + mov, 0);
-  labelBalance.textContent = `${account.balance.toFixed(2)}€`;
+  labelBalance.textContent = formatCur(
+    account.balance,
+    account.locale,
+    account.currency
+  );
 };
 
 const calcDisplaySummary = function (account) {
@@ -131,9 +142,17 @@ const calcDisplaySummary = function (account) {
     .filter(int => int >= 1)
     .reduce((acc, int) => acc + int, 0);
 
-  labelSumIn.textContent = `${incomes.toFixed(2)}€`;
-  labelSumOut.textContent = `${Math.abs(out).toFixed(2)}€`;
-  labelSumInterest.textContent = `${interest.toFixed(2)}€`;
+  labelSumIn.textContent = formatCur(incomes, account.locale, account.currency);
+  labelSumOut.textContent = formatCur(
+    Math.abs(out),
+    account.locale,
+    account.currency
+  );
+  labelSumInterest.textContent = formatCur(
+    interest,
+    account.locale,
+    account.currency
+  );
 };
 
 const createUserName = function (accs) {
@@ -146,7 +165,6 @@ const createUserName = function (accs) {
   });
 };
 createUserName(accounts);
-console.log(accounts);
 
 const updateUI = function (acc) {
   calcDisplaySummary(acc);
@@ -154,7 +172,31 @@ const updateUI = function (acc) {
   displayMovements(acc);
 };
 
-let currentAccount;
+let currentAccount, timer;
+
+const startLogOutTimer = function () {
+  const tick = function () {
+    const min = String(Math.trunc(time / 60)).padStart(2, 0);
+    const sec = String(time % 60).padStart(2, 0);
+
+    labelTimer.textContent = `${min}:${sec}`;
+
+    if (time === 0) {
+      clearInterval(timer);
+      labelWelcome.textContent = 'Log in to get started';
+      containerApp.style.opacity = 0;
+    }
+
+    time--;
+  };
+
+  let time = 300;
+
+  tick();
+  const timer = setInterval(tick, 1000);
+  return timer;
+};
+
 btnLogin.addEventListener('click', function (e) {
   e.preventDefault();
   currentAccount = accounts.find(
@@ -168,14 +210,23 @@ btnLogin.addEventListener('click', function (e) {
     containerApp.style.opacity = 100;
     // create current date and time
     const now = new Date();
-    const day = `${now.getDate()}`.padStart(2, 0);
-    const month = `${now.getMonth() + 1}`.padStart(2, 0);
-    const hours = `${now.getHours()}`.padStart(2, 0);
-    const minutes = `${now.getMinutes()}`.padStart(2, 0);
-    labelDate.textContent = `${day}/${month}/${now.getFullYear()}, ${hours}:${minutes}`;
+    const options = {
+      day: 'numeric',
+      month: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+    };
+
+    labelDate.textContent = new Intl.DateTimeFormat(
+      currentAccount.locale,
+      options
+    ).format(now);
 
     inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur();
+    if (timer) clearInterval(timer);
+    timer = startLogOutTimer();
     updateUI(currentAccount);
   }
 });
@@ -223,9 +274,11 @@ btnLoan.addEventListener('click', function (e) {
   const amount = Math.floor(inputLoanAmount.value);
   inputLoanAmount.value = '';
   if (amount > 0 && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
-    currentAccount.movements.push(amount);
-    currentAccount.movementsDates.push(new Date().toISOString());
-    updateUI(currentAccount);
+    setTimeout(function () {
+      currentAccount.movements.push(amount);
+      currentAccount.movementsDates.push(new Date().toISOString());
+      updateUI(currentAccount);
+    }, 2500);
   }
 });
 
