@@ -16,6 +16,7 @@ const tabsContainer = document.querySelector('.operations__tab-container');
 const tabsContent = document.querySelectorAll('.operations__content');
 
 const nav = document.querySelector('.nav');
+const allSection = document.querySelectorAll('.section');
 
 const openModal = function () {
   modal.classList.remove('hidden');
@@ -114,12 +115,14 @@ const headerObserver = new IntersectionObserver(stickyNav, {
 });
 
 headerObserver.observe(header);
-
-const allSection = document.querySelectorAll('.section');
+//section
+const allSections = document.querySelectorAll('.section');
 
 const revealSection = function (entries, observer) {
   const [entry] = entries;
+
   if (!entry.isIntersecting) return;
+
   entry.target.classList.remove('section--hidden');
   observer.unobserve(entry.target);
 };
@@ -129,7 +132,68 @@ const sectionObserver = new IntersectionObserver(revealSection, {
   threshold: 0.15,
 });
 
-allSection.forEach(section => {
+allSections.forEach(function (section) {
   sectionObserver.observe(section);
-  section.classList.add('section--hidden');
+  // section.classList.add('section--hidden');
 });
+
+//img
+const imgTarget = document.querySelectorAll('img[data-src]');
+
+const loadImg = function (entries, observer) {
+  const [entry] = entries;
+  if (!entry.target) return;
+  // Replace with data-src
+  entry.target.src = entry.target.dataset.src;
+  entry.target.addEventListener('load', function () {
+    entry.target.classList.remove('lazy-img');
+  });
+  observer.unobserve(entry.target);
+};
+
+const imgObserver = new IntersectionObserver(loadImg, {
+  root: null,
+  threshold: 0,
+  rootMargin: '200px',
+});
+
+imgTarget.forEach(img => {
+  imgObserver.observe(img);
+});
+
+//slider
+const slides = document.querySelectorAll('.slide');
+const btnLeft = document.querySelector('.slider__btn--left');
+const btnRight = document.querySelector('.slider__btn--right');
+let curSlide = 0;
+const maxSlides = slides.length;
+
+// ////
+// const slider = document.querySelector('.slider');
+// slider.style.transform = 'scale(0.4) translateX(-800px)';
+// slider.style.overflow = 'visible';
+// ////
+
+const goToSlide = function (slide) {
+  slides.forEach(
+    (s, i) => (s.style.transform = `translateX(${(i - slide) * 100}%)`)
+  );
+};
+const nextSlide = function () {
+  if (curSlide === maxSlides - 1) curSlide = 0;
+  else curSlide++;
+
+  goToSlide(curSlide);
+};
+const prevSlide = function () {
+  if (curSlide === 0) curSlide = maxSlides - 1;
+  else curSlide--;
+
+  goToSlide(curSlide);
+};
+goToSlide(0);
+
+//next slide
+btnRight.addEventListener('click', nextSlide);
+//prev slide
+btnLeft.addEventListener('click', prevSlide);
