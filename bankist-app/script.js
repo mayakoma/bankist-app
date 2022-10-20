@@ -217,6 +217,14 @@ const slider = function () {
 
   // eventListener
 
+  document.addEventListener('DOMContentLoaded', function (e) {
+    console.log('Html parsed and DOM tree built');
+  });
+
+  window.addEventListener('load', function (e) {
+    console.log('page fully loaded');
+  });
+
   //next slide
   btnRight.addEventListener('click', nextSlide);
   //prev slide
